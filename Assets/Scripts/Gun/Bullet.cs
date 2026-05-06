@@ -6,6 +6,8 @@ public class Bullet : MonoBehaviour
 {
     [SerializeField] private float _moveSpeed = 10f;
     [SerializeField] private int _damageAmount = 1;
+    Gun _gun;
+    bool isReleased = false;
 
     private Vector2 _fireDirection;
 
@@ -16,12 +18,15 @@ public class Bullet : MonoBehaviour
         _rigidBody = GetComponent<Rigidbody2D>();
     }
 
-    private void Start() {
-        if (PlayerController.Instance.IsFacingRight()) {
-            _fireDirection = Vector2.right;
-        } else {
-            _fireDirection = Vector2.left;
-        }
+    public void Init(Gun gun, Vector2 bulletSpawnPos, Vector2 mosPos)
+    {
+        _gun = gun;
+        _fireDirection = (mosPos - bulletSpawnPos);
+        _fireDirection.Normalize();
+        isReleased = false;
+        
+        gameObject.transform.position = bulletSpawnPos;
+        transform.rotation = Quaternion.identity;
     }
 
     private void FixedUpdate()
@@ -32,9 +37,11 @@ public class Bullet : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.gameObject.layer == gameObject.layer) return;
+        if (isReleased) return;
         
         Health health = other.gameObject.GetComponent<Health>();
         health?.TakeDamage(_damageAmount);
-        Destroy(this.gameObject);
+        isReleased = true;
+        _gun.ReleaseBulletFromPool(this);
     }
 }
